@@ -1,0 +1,51 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Segment {
+  id       Int       @id @default(autoincrement())
+  slug     String    @unique // "web-app", "ai-automation", dst
+  label    String // "Web App & Sistem", dll
+  projects Project[]
+}
+
+model Project {
+  id Int @id @default(autoincrement())
+
+  segment   Segment @relation(fields: [segmentId], references: [id])
+  segmentId Int
+
+  category String
+  title    String
+  result   String
+  details  String
+  tags     String // JSON string array
+  image    String
+  imageAlt String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  whatsapp  String?
+  message   String
+  createdAt DateTime @default(now())
+}

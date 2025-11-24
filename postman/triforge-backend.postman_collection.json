@@ -1,0 +1,349 @@
+{
+  "info": {
+    "_postman_id": "b6f5c5b8-2a7a-4b9d-9e5d-triforge-backend",
+    "name": "Triforge Backend API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@triforge.test\",\n  \"password\": \"Admin123!\",\n  \"name\": \"Admin Triforge\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.token) {",
+                  "    pm.environment.set('authToken', json.token);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@triforge.test\",\n  \"password\": \"Admin123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Me (Profile)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Segments",
+      "item": [
+        {
+          "name": "List Segments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/segments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "segments"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "List Projects (All)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Projects by Segment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects?segment=web-app",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects"
+              ],
+              "query": [
+                {
+                  "key": "segment",
+                  "value": "web-app"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Project by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"segment\": \"web-app\",\n  \"category\": \"Web App · AI Chat\",\n  \"title\": \"Platform Chat AI untuk kreator & talent\",\n  \"result\": \"Engagement naik dan tercipta kanal monetisasi baru lewat percakapan personal antara fans dan talent.\",\n  \"details\": \"Fitur: multi-room chat, payment gateway, manajemen talent, integrasi AI untuk respons, sistem komisi, dan panel admin monitoring performa.\",\n  \"tags\": [\n    \"Realtime chat\",\n    \"Payment gateway\",\n    \"Admin panel\",\n    \"AI assistant\"\n  ],\n  \"image\": \"https://images.pexels.com/photos/1181675/pexels-photo-1181675.jpeg?auto=compress&cs=tinysrgb&w=800\",\n  \"imageAlt\": \"Tampilan dashboard chat AI dengan beberapa percakapan aktif.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/projects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Project",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"segment\": \"web-app\",\n  \"category\": \"Web App · AI Chat\",\n  \"title\": \"Platform Chat AI untuk kreator & talent (versi baru)\",\n  \"result\": \"Engagement naik signifikan dan retensi pengguna lebih tinggi.\",\n  \"details\": \"Fitur: multi-room chat, payment gateway, rekomendasi konten oleh AI, sistem komisi fleksibel, dan panel analitik performa.\",\n  \"tags\": [\n    \"Realtime chat\",\n    \"Payment gateway\",\n    \"Analytics\"\n  ],\n  \"image\": \"https://images.pexels.com/photos/1181675/pexels-photo-1181675.jpeg?auto=compress&cs=tinysrgb&w=800\",\n  \"imageAlt\": \"Dashboard chat AI versi terbaru.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Project",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Contact",
+      "item": [
+        {
+          "name": "Create Contact Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Indra\",\n  \"email\": \"indra@example.com\",\n  \"whatsapp\": \"081234567890\",\n  \"message\": \"Saya ingin diskusi pembuatan platform chat AI untuk komunitas kreator.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/contact",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "contact"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "authToken",
+      "value": ""
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+# ===== NODE / EXPRESS JS =====
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage
+coverage/
+*.lcov
+
+# Build outputs (kalau kamu pakai build tools)
+dist/
+build/
+.cache/
+.next/
+.nuxt/
+out/
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# Editor folders
+.vscode/
+.idea/
+
+# Optional cache
+.cache/
+npm-cache/
+.eslintcache
+
+# Uploaded files (jika Express menangani upload)
+uploads/
+temp/
+tmp/
+
+# TypeScript (jika pakai)
+*.tsbuildinfo
+
+# Prisma
+prisma/*.db
+prisma/*.db-journal
+
+# PM2 logs
+.pm2/logs/
+.pm2/pids/
+.pm2/*.log
