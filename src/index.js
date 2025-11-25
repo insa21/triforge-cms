@@ -23,19 +23,8 @@ app.get("/", (req, res) => {
 // routes utama
 app.use("/api", apiRouter);
 
-// error fallback (optional)
-app.use((err, req, res, next) => {
-  console.error("Unhandled error:", err);
-  res.status(500).json({ message: "Internal server error" });
-});
-
 const server = app.listen(env.port, () => {
   console.log(`🚀 Server listening on port ${env.port}`);
 });
 
-// graceful shutdown
-process.on("SIGINT", async () => {
-  console.log("Shutting down...");
-  await prisma.$disconnect();
-  server.close(() => process.exit(0));
-});
+
