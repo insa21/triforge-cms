@@ -23,8 +23,13 @@ app.get("/", (req, res) => {
 // routes utama
 app.use("/api", apiRouter);
 
-const server = app.listen(env.port, () => {
-  console.log(`🚀 Server listening on port ${env.port}`);
+// error fallback (optional)
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err);
+  res.status(500).json({ message: "Internal server error" });
 });
 
-
+// ❗❗ TIDAK ADA app.listen & process.on di sini
+// Hanya export app (dan kalau mau prisma/env)
+export { app, prisma, env };
+export default app;

@@ -7,7 +7,6 @@ const server = app.listen(PORT, () => {
   console.log(`🚀 Server listening on port ${PORT}`);
 });
 
-// graceful shutdown untuk lokal
 process.on("SIGINT", async () => {
   console.log("Shutting down...");
   try {
