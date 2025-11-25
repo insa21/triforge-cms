@@ -1,18 +1,8 @@
-// src/index.js
 import express from "express";
 import cors from "cors";
 import { env } from "./config/env.js";
 import { prisma } from "./config/db.js";
 import { apiRouter } from "./routes/index.js";
-
-// Pastikan prisma sudah ready (karena db.js async di Vercel)
-async function waitForPrisma() {
-  while (!prisma) {
-    await new Promise((r) => setTimeout(r, 10));
-  }
-}
-
-await waitForPrisma();
 
 const app = express();
 
@@ -24,27 +14,19 @@ app.use(express.json());
 app.get("/", (req, res) => {
   res.json({
     status: "ok",
-    message:
-      "Triforge backend running (PostgreSQL + Prisma + Auth + Projects + Contact)",
+    message: "Triforge backend (local mode)",
   });
 });
 
 // routes utama
 app.use("/api", apiRouter);
 
-// error fallback (optional)
+// error fallback
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);
   res.status(500).json({ message: "Internal server error" });
 });
 
-const server = app.listen(env.port, () => {
-  console.log(`🚀 Server listening on port ${env.port}`);
-});
-
-// graceful shutdown
-process.on("SIGINT", async () => {
-  console.log("Shutting down...");
-  await prisma.$disconnect();
-  server.close(() => process.exit(0));
+app.listen(env.port, () => {
+  console.log(`🚀 Local server running on port ${env.port}`);
 });
