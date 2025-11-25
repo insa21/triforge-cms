@@ -1,12 +1,11 @@
 import express from "express";
 import cors from "cors";
-import { env } from "./config/env.js";
-import { prisma } from "./config/db.js";
 import { apiRouter } from "./routes/index.js";
+import { prisma } from "./config/db.js";
 
+// Wajib: hapus app.listen() → Vercel tidak butuh itu
 const app = express();
 
-// middleware global
 app.use(cors());
 app.use(express.json());
 
@@ -14,19 +13,12 @@ app.use(express.json());
 app.get("/", (req, res) => {
   res.json({
     status: "ok",
-    message: "Triforge backend (local mode)",
+    message: "Backend Serverless on Vercel",
   });
 });
 
-// routes utama
+// routes
 app.use("/api", apiRouter);
 
-// error fallback
-app.use((err, req, res, next) => {
-  console.error("Unhandled error:", err);
-  res.status(500).json({ message: "Internal server error" });
-});
-
-app.listen(env.port, () => {
-  console.log(`🚀 Local server running on port ${env.port}`);
-});
+// Vercel: export sebagai ONE API handler
+export default app;
