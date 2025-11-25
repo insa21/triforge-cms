@@ -1,5 +1,7 @@
 // api/index.js
-import app from "../src/index.js";
-
-// Vercel butuh default export sebagai handler
+import express from "express";
+const app = express();
+app.get("/", (req, res) => {
+  res.json({ message: "Hello from Express on Vercel" });
+});
 export default app;
