@@ -7,8 +7,9 @@ export const projectCreateSchema = z.object({
   title: z.string().min(3, "Judul minimal 3 karakter"),
   result: z.string().min(5, "Result minimal 5 karakter"),
   details: z.string().min(5, "Details minimal 5 karakter"),
+  // tags akan kita normalisasi dulu di controller (bisa kirim array / string / JSON)
   tags: z.array(z.string()).optional(),
-  image: z.string().url("URL gambar tidak valid").optional(),
+  // image TIDAK divalidasi di sini, karena sekarang pakai upload file
   imageAlt: z.string().optional(),
 });
 

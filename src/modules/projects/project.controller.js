@@ -2,6 +2,7 @@
 import { prisma } from "../../config/db.js";
 import { projectCreateSchema, projectUpdateSchema } from "./project.schema.js";
 
+// DTO mapper: FE tetap terima field yang sama
 const mapProjectToDto = (project) => ({
   id: project.id,
   segment: project.segment.slug,
@@ -13,6 +14,35 @@ const mapProjectToDto = (project) => ({
   image: project.image,
   imageAlt: project.imageAlt,
 });
+
+// Helper: normalisasi tags dari body (array / JSON string / "a, b, c")
+function normalizeTags(raw) {
+  if (raw === undefined || raw === null) return undefined;
+
+  // Kalau sudah array
+  if (Array.isArray(raw)) {
+    return raw.map((t) => String(t));
+  }
+
+  const str = String(raw).trim();
+  if (!str) return undefined;
+
+  // Coba parse JSON dulu
+  try {
+    const parsed = JSON.parse(str);
+    if (Array.isArray(parsed)) {
+      return parsed.map((t) => String(t));
+    }
+  } catch {
+    // ignore
+  }
+
+  // Fallback: pisah koma
+  return str
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+}
 
 export async function listProjects(req, res) {
   try {
@@ -56,7 +86,17 @@ export async function getProject(req, res) {
 
 export async function createProject(req, res) {
   try {
-    const parsed = projectCreateSchema.safeParse(req.body);
+    // Semua field body datang sebagai string karena multipart/form-data
+    const body = { ...req.body };
+
+    const normalizedTags = normalizeTags(body.tags);
+    if (normalizedTags) {
+      body.tags = normalizedTags;
+    } else {
+      delete body.tags;
+    }
+
+    const parsed = projectCreateSchema.safeParse(body);
     if (!parsed.success) {
       return res.status(400).json({
         message: "Validasi gagal",
@@ -71,9 +111,17 @@ export async function createProject(req, res) {
       result,
       details,
       tags = [],
-      image,
       imageAlt,
     } = parsed.data;
+
+    // Sekarang gambar wajib diupload lewat file
+    if (!req.file) {
+      return res
+        .status(400)
+        .json({ message: "Gambar (field 'image') wajib diupload." });
+    }
+
+    const imagePath = `/uploads/projects/${req.file.filename}`;
 
     const seg = await prisma.segment.findUnique({
       where: { slug: segment },
@@ -93,8 +141,8 @@ export async function createProject(req, res) {
         result,
         details,
         tags: JSON.stringify(tags),
-        image: image || "",
-        imageAlt: imageAlt || "",
+        image: imagePath,
+        imageAlt: imageAlt || title,
       },
       include: { segment: true },
     });
@@ -110,12 +158,26 @@ export async function updateProject(req, res) {
   try {
     const id = Number(req.params.id);
 
-    const existing = await prisma.project.findUnique({ where: { id } });
+    const existing = await prisma.project.findUnique({
+      where: { id },
+    });
     if (!existing) {
       return res.status(404).json({ message: "Project not found" });
     }
 
-    const parsed = projectUpdateSchema.safeParse(req.body);
+    const body = { ...req.body };
+
+    const normalizedTags = normalizeTags(body.tags);
+    if (normalizedTags) {
+      body.tags = normalizedTags;
+    } else if (body.tags !== undefined) {
+      // kalau tags dikirim kosong, kita akan pakai [] (bukan existing.tags)
+      body.tags = [];
+    } else {
+      delete body.tags;
+    }
+
+    const parsed = projectUpdateSchema.safeParse(body);
     if (!parsed.success) {
       return res.status(400).json({
         message: "Validasi gagal",
@@ -138,6 +200,13 @@ export async function updateProject(req, res) {
       segmentId = seg.id;
     }
 
+    // Kalau ada file baru, ganti image path. Kalau tidak, pakai yang lama.
+    let imagePath = existing.image;
+    if (req.file) {
+      imagePath = `/uploads/projects/${req.file.filename}`;
+      // NOTE: kalau mau sekalian hapus file lama di disk, tinggal tambahkan fs.unlink di sini.
+    }
+
     const updated = await prisma.project.update({
       where: { id },
       data: {
@@ -146,8 +215,9 @@ export async function updateProject(req, res) {
         title: data.title ?? existing.title,
         result: data.result ?? existing.result,
         details: data.details ?? existing.details,
-        tags: data.tags ? JSON.stringify(data.tags) : existing.tags,
-        image: data.image ?? existing.image,
+        tags:
+          data.tags !== undefined ? JSON.stringify(data.tags) : existing.tags,
+        image: imagePath,
         imageAlt: data.imageAlt ?? existing.imageAlt,
       },
       include: { segment: true },
@@ -170,6 +240,8 @@ export async function deleteProject(req, res) {
     }
 
     await prisma.project.delete({ where: { id } });
+
+    // Optional: kalau mau, bisa hapus file gambar fisiknya di sini.
 
     return res.status(204).send();
   } catch (err) {
