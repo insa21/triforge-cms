@@ -44,6 +44,14 @@ function normalizeTags(raw) {
     .filter(Boolean);
 }
 
+// Helper: dari file (buffer) jadi data URL base64
+function fileToDataUrl(file) {
+  if (!file) return null;
+  const mime = file.mimetype || "image/jpeg";
+  const base64 = file.buffer.toString("base64");
+  return `data:${mime};base64,${base64}`;
+}
+
 export async function listProjects(req, res) {
   try {
     const { segment } = req.query;
@@ -86,9 +94,10 @@ export async function getProject(req, res) {
 
 export async function createProject(req, res) {
   try {
-    // Semua field body datang sebagai string karena multipart/form-data
+    // Semua field body datang sebagai string (multipart/form-data)
     const body = { ...req.body };
 
+    // Normalisasi tags (jadi array string)
     const normalizedTags = normalizeTags(body.tags);
     if (normalizedTags) {
       body.tags = normalizedTags;
@@ -111,18 +120,37 @@ export async function createProject(req, res) {
       result,
       details,
       tags = [],
+      image: imageFromBody,
       imageAlt,
     } = parsed.data;
 
-    // Sekarang gambar wajib diupload lewat file
-    if (!req.file) {
-      return res
-        .status(400)
-        .json({ message: "Gambar (field 'image') wajib diupload." });
+    // ==============================
+    // Handle IMAGE (file / string)
+    // ==============================
+    let finalImage = null;
+
+    // 1) Kalau ada file dari multer → jadikan data URL base64
+    if (req.file) {
+      finalImage = fileToDataUrl(req.file);
     }
 
-    const imagePath = `/uploads/projects/${req.file.filename}`;
+    // 2) Kalau tidak ada file tapi body.image ada → pakai string itu (URL / base64)
+    if (!finalImage && typeof imageFromBody === "string") {
+      const trimmed = imageFromBody.trim();
+      if (trimmed) {
+        finalImage = trimmed;
+      }
+    }
 
+    // 3) Kalau tetap kosong → error
+    if (!finalImage) {
+      return res.status(400).json({
+        message:
+          "Gambar wajib diisi. Upload file (field 'image') atau kirim string di field 'image'.",
+      });
+    }
+
+    // Cari segment
     const seg = await prisma.segment.findUnique({
       where: { slug: segment },
     });
@@ -141,7 +169,7 @@ export async function createProject(req, res) {
         result,
         details,
         tags: JSON.stringify(tags),
-        image: imagePath,
+        image: finalImage, // <— string (URL / data URL base64)
         imageAlt: imageAlt || title,
       },
       include: { segment: true },
@@ -167,11 +195,12 @@ export async function updateProject(req, res) {
 
     const body = { ...req.body };
 
+    // Normalisasi tags
     const normalizedTags = normalizeTags(body.tags);
     if (normalizedTags) {
       body.tags = normalizedTags;
     } else if (body.tags !== undefined) {
-      // kalau tags dikirim kosong, kita akan pakai [] (bukan existing.tags)
+      // kalau dikirim tapi kosong → []
       body.tags = [];
     } else {
       delete body.tags;
@@ -187,6 +216,9 @@ export async function updateProject(req, res) {
 
     const data = parsed.data;
 
+    // ==============================
+    // Handle segment (slug → id)
+    // ==============================
     let segmentId = existing.segmentId;
     if (data.segment) {
       const seg = await prisma.segment.findUnique({
@@ -200,11 +232,21 @@ export async function updateProject(req, res) {
       segmentId = seg.id;
     }
 
-    // Kalau ada file baru, ganti image path. Kalau tidak, pakai yang lama.
-    let imagePath = existing.image;
+    // ==============================
+    // Handle IMAGE update
+    // ==============================
+    let finalImage = existing.image;
+
+    // 1) Kalau ada file baru → override dengan base64
     if (req.file) {
-      imagePath = `/uploads/projects/${req.file.filename}`;
-      // NOTE: kalau mau sekalian hapus file lama di disk, tinggal tambahkan fs.unlink di sini.
+      finalImage = fileToDataUrl(req.file);
+    }
+    // 2) Kalau tidak ada file, tapi ada field image di body
+    else if (Object.prototype.hasOwnProperty.call(data, "image")) {
+      if (typeof data.image === "string" && data.image.trim()) {
+        finalImage = data.image.trim(); // bisa URL / base64
+      }
+      // Kalau dikirim kosong, kita biarkan existing.image (tidak dihapus)
     }
 
     const updated = await prisma.project.update({
@@ -217,7 +259,7 @@ export async function updateProject(req, res) {
         details: data.details ?? existing.details,
         tags:
           data.tags !== undefined ? JSON.stringify(data.tags) : existing.tags,
-        image: imagePath,
+        image: finalImage,
         imageAlt: data.imageAlt ?? existing.imageAlt,
       },
       include: { segment: true },
@@ -241,7 +283,7 @@ export async function deleteProject(req, res) {
 
     await prisma.project.delete({ where: { id } });
 
-    // Optional: kalau mau, bisa hapus file gambar fisiknya di sini.
+    // (opsional) kalau dulu sempat simpan ke disk, di sini bisa ditambah fs.unlink
 
     return res.status(204).send();
   } catch (err) {
